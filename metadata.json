@@ -1,0 +1,7 @@
+{
+  "uuid": "claude-usage@mustafa",
+  "name": "Claude Kullanim",
+  "description": "Ust bara Claude hesabinin 5 saatlik ve haftalik kullanim limitlerini Clawd maskotuyla birlikte ekler. Veri Claude Code CLI girisinden okunur.",
+  "shell-version": ["46"],
+  "version": 1
+}

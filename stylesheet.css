@@ -1,0 +1,101 @@
+/* Claude paleti: turuncu #D97757, krem #F0EEE6, sıcak koyu #1F1E1D */
+
+/* ---- Üst bar ---- */
+/* Panel düğmesinin 3 px'lik saydam kenarı daraltılır: animasyona 28 px yükseklik kalsın */
+#panel .panel-button.cu-button { border-width: 1px; -natural-hpadding: 6px; -minimum-hpadding: 4px; }
+.cu-panel { spacing: 6px; }
+.cu-clawd-small { width: 68px; height: 28px; }
+.cu-panel-bars { spacing: 3px; }
+.cu-panel-label {
+  font-weight: bold;
+  font-feature-settings: "tnum";
+  min-width: 2.4em;
+}
+
+.cu-track { background-color: rgba(240, 238, 230, 0.13); }
+
+.cu-ok {
+  background-gradient-direction: horizontal;
+  background-gradient-start: #E8A383;
+  background-gradient-end: #D97757;
+}
+.cu-warn {
+  background-gradient-direction: horizontal;
+  background-gradient-start: #F2C25B;
+  background-gradient-end: #E0912E;
+}
+.cu-crit {
+  background-gradient-direction: horizontal;
+  background-gradient-start: #F27D6E;
+  background-gradient-end: #D9433B;
+}
+.cu-off { background-color: rgba(240, 238, 230, 0.32); }
+
+/* ---- Menü ---- */
+.cu-menu .popup-menu-content {
+  background-color: #1F1E1D;
+  border: 1px solid rgba(217, 119, 87, 0.30);
+  border-radius: 22px;
+  padding: 10px 6px;
+  box-shadow: 0 6px 18px 0 rgba(0, 0, 0, 0.45);
+}
+.cu-menu .popup-menu-item { color: #F0EEE6; }
+.cu-menu .popup-menu-item:hover,
+.cu-menu .popup-menu-item:focus { background-color: rgba(217, 119, 87, 0.16); color: #FFFFFF; }
+.cu-menu .popup-menu-item:active { background-color: rgba(217, 119, 87, 0.26); }
+.cu-menu .popup-separator-menu-item-separator { background-color: rgba(240, 238, 230, 0.08); }
+
+.cu-header { spacing: 14px; padding: 2px 4px; }
+.cu-clawd-big { width: 136px; height: 56px; }
+.cu-title-row { spacing: 9px; }
+.cu-title { font-size: 17pt; font-weight: 800; color: #F0EEE6; }
+.cu-chip {
+  background-color: rgba(217, 119, 87, 0.18);
+  color: #E8A383;
+  border-radius: 99px;
+  padding: 1px 10px;
+  font-size: 9pt;
+  font-weight: bold;
+}
+.cu-status { color: #B7B1A6; font-size: 10pt; padding-top: 3px; max-width: 220px; }
+
+.cu-limits { spacing: 12px; padding: 4px 4px; }
+.cu-limit { spacing: 6px; }
+.cu-limit-name { color: #E7E3D9; font-size: 10.5pt; }
+.cu-limit-pct { font-weight: 800; font-size: 11pt; font-feature-settings: "tnum"; }
+.cu-text-ok { color: #E8A383; }
+.cu-text-warn { color: #F2C25B; }
+.cu-text-crit { color: #F27D6E; }
+.cu-text-off { color: #8F8A80; }
+.cu-limit-reset { color: #8F8A80; font-size: 9pt; }
+
+.cu-note {
+  color: #E7E3D9;
+  font-size: 9.5pt;
+  background-color: rgba(217, 119, 87, 0.10);
+  border: 1px solid rgba(217, 119, 87, 0.25);
+  border-radius: 12px;
+  padding: 8px 10px;
+  max-width: 292px;
+}
+
+.cu-foot-row { spacing: 8px; padding: 0 4px; }
+.cu-foot { color: #8F8A80; font-size: 9pt; }
+.cu-btn {
+  color: #F0EEE6;
+  background-color: rgba(240, 238, 230, 0.07);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 9.5pt;
+}
+.cu-btn:hover, .cu-btn:focus { background-color: rgba(217, 119, 87, 0.28); }
+.cu-btn:active { background-color: rgba(217, 119, 87, 0.40); }
+.cu-btn-box { spacing: 6px; }
+.cu-btn-icon { icon-size: 13px; }
+.cu-menu .cu-link { color: #E8A383; font-size: 10pt; }
+
+.cu-section { color: #7E7A72; font-size: 8pt; font-weight: bold; padding-top: 4px; }
+.cu-seg { }
+.cu-legend { spacing: 14px; }
+.cu-legend-item { spacing: 5px; }
+.cu-legend-dot { width: 8px; height: 8px; border-radius: 4px; }
