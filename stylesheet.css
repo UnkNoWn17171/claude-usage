@@ -99,3 +99,14 @@
 .cu-legend { spacing: 14px; }
 .cu-legend-item { spacing: 5px; }
 .cu-legend-dot { width: 8px; height: 8px; border-radius: 4px; }
+
+/* Yüzde + altında 5 saatlik pencere sayacı (panel yüksekliğine sığacak kadar küçük) */
+.cu-panel-texts { spacing: 0; }
+#panel .cu-panel-label { font-size: 9.5pt; }
+.cu-panel-timer {
+  font-size: 7.5pt;
+  font-weight: normal;
+  color: rgba(240, 238, 230, 0.72);
+  font-feature-settings: "tnum";
+}
+.cu-timer-idle { color: rgba(240, 238, 230, 0.45); font-style: italic; }

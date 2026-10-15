@@ -87,6 +87,12 @@ function fmtLeft(ms) {
     return `${mm} dk`;
 }
 
+// Panel sayacı için kısa biçim: "2sa 14dk", bir saatin altında "47 dk"
+function fmtShort(ms) {
+    const m = Math.max(1, Math.ceil(ms / 60000));
+    return m < 60 ? `${m} dk` : `${Math.floor(m / 60)}sa ${pad(m % 60)}dk`;
+}
+
 const fmtClock = (date, withDay) =>
     `${withDay ? `${DAYS[date.getDay()]} ` : ''}${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
@@ -106,12 +112,21 @@ function extractLimits(data) {
     const push = (key, title, sub, other = false) => {
         const v = data?.[key];
         seen.add(key);
-        if (!v || typeof v.utilization !== 'number')
+        if (!v || typeof v.utilization !== 'number') {
+            // Oturum penceresi hiç başlamamışsa API null dönebilir; satır yine görünsün
+            if (key === 'five_hour' && data && key in data)
+                out.push({key, title, sub, other, pct: 0, resetsAt: null, usedUsd: null, limitUsd: null});
             return;
+        }
+        let pct = v.utilization;
+        let resetsAt = parseTime(v.resets_at);
+        // Sıfırlanma anı geçtiyse (bir sonraki sorguya kadar) pencere bitmiş sayılır
+        if (resetsAt && resetsAt.getTime() <= Date.now()) {
+            pct = 0;
+            resetsAt = null;
+        }
         out.push({
-            key, title, sub, other,
-            pct: v.utilization,
-            resetsAt: parseTime(v.resets_at),
+            key, title, sub, other, pct, resetsAt,
             usedUsd: typeof v.used_dollars === 'number' ? v.used_dollars : null,
             limitUsd: typeof v.limit_dollars === 'number' ? v.limit_dollars : null,
         });
@@ -247,10 +262,14 @@ class UsageIndicator extends PanelMenu.Button {
         this._pWeek = new Bar(PANEL_BAR_W, 3);
         bars.add_child(this._pSession.actor);
         bars.add_child(this._pWeek.actor);
-        this._label = new St.Label({text: '…', style_class: 'cu-panel-label', y_align: Clutter.ActorAlign.CENTER});
+        const texts = new St.BoxLayout({vertical: true, style_class: 'cu-panel-texts', y_align: Clutter.ActorAlign.CENTER});
+        this._label = new St.Label({text: '…', style_class: 'cu-panel-label'});
+        this._timer = new St.Label({text: '', style_class: 'cu-panel-timer'});
+        texts.add_child(this._label);
+        texts.add_child(this._timer);
         box.add_child(this._clawd);
         box.add_child(bars);
-        box.add_child(this._label);
+        box.add_child(texts);
         this.add_child(box);
 
         this._buildMenu();
@@ -349,6 +368,7 @@ class UsageIndicator extends PanelMenu.Button {
             const now = Date.now();
             if (now - this._awayCheck > 2000) {
                 this._awayCheck = now;
+                this._updateTimer();
                 this._director.away = global.backend.get_core_idle_monitor().get_idletime() > AWAY_MS;
             }
             const scene = this._director.update(now);
@@ -585,10 +605,50 @@ class UsageIndicator extends PanelMenu.Button {
         });
     }
 
+    // 5 saatlik pencere: başladıysa sıfırlanmaya kalan süre, başlamadıysa "başlamadı"
+    _updateTimer() {
+        let text = '', idle = false;
+        if (this._data && this._state !== 'expired' && this._state !== 'nocreds') {
+            const s = extractLimits(this._data).find(l => l.key === 'five_hour');
+            const left = s?.resetsAt ? s.resetsAt.getTime() - Date.now() : 0;
+            if (left > 0) {
+                text = fmtShort(left);
+            } else {
+                text = 'başlamadı';
+                idle = true;
+            }
+        }
+        if (this._timer.text !== text)
+            this._timer.text = text;
+        this._timer.visible = text !== '';
+        const cls = idle ? 'cu-panel-timer cu-timer-idle' : 'cu-panel-timer';
+        if (this._timer.style_class !== cls)
+            this._timer.style_class = cls;
+    }
+
+    // Pencere sıfırlandığı anda (30 sn payla) veriyi tazele: yüzde ve sayaç beklemeden düzelsin
+    _scheduleResetRefresh(resetsAt) {
+        this._removeTimeout(this._resetId);
+        this._resetId = null;
+        const wait = resetsAt ? resetsAt.getTime() - Date.now() + 30000 : 0;
+        if (wait <= 0 || wait > 6 * 3600 * 1000)
+            return;
+        this._resetId = this._addTimeout(wait, () => {
+            this._resetId = null;
+            this._refresh();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
     _render() {
         const limits = this._data ? extractLimits(this._data) : [];
         const byKey = Object.fromEntries(limits.map(l => [l.key, l]));
         const session = byKey.five_hour ?? limits[0] ?? null;
+        this._updateTimer();
+        if (session?.resetsAt?.getTime() !== this._resetAt) {
+            this._resetAt = session?.resetsAt?.getTime();
+            this._scheduleResetRefresh(session?.resetsAt);
+        }
         const week = byKey.seven_day ?? null;
         const fresh = this._state === 'ok';
         const peaks = [session, week].filter(Boolean).map(l => l.pct);
@@ -673,6 +733,8 @@ class UsageIndicator extends PanelMenu.Button {
             reset = `${fmtLeft(left)} sonra sıfırlanır · ${date}`;
         } else if (l.key === 'extra_usage') {
             reset = 'Aylık ek kullanım bütçesi';
+        } else if (l.key === 'five_hour') {
+            reset = 'Başlamadı · ilk mesajla 5 saatlik süre başlar';
         } else if (l.pct === 0) {
             reset = 'Pencere henüz başlamadı';
         }
