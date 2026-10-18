@@ -12,24 +12,7 @@
   min-width: 2.4em;
 }
 
-.cu-track { background-color: rgba(240, 238, 230, 0.13); }
-
-.cu-ok {
-  background-gradient-direction: horizontal;
-  background-gradient-start: #E8A383;
-  background-gradient-end: #D97757;
-}
-.cu-warn {
-  background-gradient-direction: horizontal;
-  background-gradient-start: #F2C25B;
-  background-gradient-end: #E0912E;
-}
-.cu-crit {
-  background-gradient-direction: horizontal;
-  background-gradient-start: #F27D6E;
-  background-gradient-end: #D9433B;
-}
-.cu-off { background-color: rgba(240, 238, 230, 0.32); }
+/* Barlar Cairo ile çiziliyor (extension.js: BarArea/SegArea); renkler THEMES/LEVEL_COLORS'ta */
 
 /* ---- Menü ---- */
 .cu-menu .popup-menu-content {
@@ -95,7 +78,6 @@
 .cu-menu .cu-link { color: #E8A383; font-size: 10pt; }
 
 .cu-section { color: #7E7A72; font-size: 8pt; font-weight: bold; padding-top: 4px; }
-.cu-seg { }
 .cu-legend { spacing: 14px; }
 .cu-legend-item { spacing: 5px; }
 .cu-legend-dot { width: 8px; height: 8px; border-radius: 4px; }
@@ -110,3 +92,33 @@
   font-feature-settings: "tnum";
 }
 .cu-timer-idle { color: rgba(240, 238, 230, 0.45); font-style: italic; }
+
+/* ---- Tema seçici (menü başlığında renk noktaları) ---- */
+.cu-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 99px;
+  border: 2px solid transparent;
+  margin-left: 4px;
+}
+.cu-swatch-turuncu { background-color: #D97757; }
+.cu-swatch-mor { background-color: #9D7BEA; }
+.cu-swatch:hover, .cu-swatch:focus { border-color: rgba(240, 238, 230, 0.55); }
+.cu-swatch.cu-swatch-on { border-color: #F0EEE6; }
+
+/* ---- Mor tema ---- */
+.cu-menu.cu-purple .popup-menu-content {
+  background-color: #1B1724;
+  border: 1px solid rgba(157, 123, 234, 0.38);
+}
+.cu-menu.cu-purple .popup-menu-item:hover,
+.cu-menu.cu-purple .popup-menu-item:focus { background-color: rgba(157, 123, 234, 0.18); }
+.cu-menu.cu-purple .popup-menu-item:active { background-color: rgba(157, 123, 234, 0.28); }
+.cu-menu.cu-purple .popup-separator-menu-item-separator { background-color: rgba(201, 178, 255, 0.10); }
+.cu-menu.cu-purple .cu-chip { background-color: rgba(157, 123, 234, 0.22); color: #C9B2FF; }
+.cu-menu.cu-purple .cu-text-ok { color: #C9B2FF; }
+.cu-menu.cu-purple .cu-link { color: #C9B2FF; }
+.cu-menu.cu-purple .cu-status { color: #B3ABC4; }
+.cu-menu.cu-purple .cu-btn:hover, .cu-menu.cu-purple .cu-btn:focus { background-color: rgba(157, 123, 234, 0.30); }
+.cu-menu.cu-purple .cu-btn:active { background-color: rgba(157, 123, 234, 0.42); }
+.cu-menu.cu-purple .cu-note { background-color: rgba(157, 123, 234, 0.10); border-color: rgba(157, 123, 234, 0.28); }

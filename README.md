@@ -5,8 +5,8 @@ haftalık (ince) çubuk, oturum yüzdesi ve altında küçük sayaç: 5 saatlik 
 kalan süre ("2sa 14dk", "47 dk"), başlamadıysa "başlamadı". Sıfırlanma anından 30 sn sonra veri kendiliğinden
 tazelenir. Tıklayınca her limit için yüzde, çubuk, sıfırlanma zamanı ve haftalık ürün dağılımı.
 
-Clawd hiç boş durmaz: 54 hareket torbadan karışık sırayla (hepsi oynamadan tekrar yok), aralarda
-gezinme, el sallama, dans, zıplama.
+Clawd hiç boş durmaz: yalnızca bilgisayar ve drone işleri, torbadan karışık sırayla (hepsi oynamadan
+tekrar yok), aralarında boş zıplama/dans yok; bir iş bitince hemen sıradakine geçer.
 - Bilgisayar/kod/yapay zekâ (29): laptop, kod, terminal, böcek avı, derleme, kahve, klavye, fare, git,
   sinir ağı, düşünme, ikilik yağmur, bulut, kaydet, wifi, yükleniyor, çökme, yeniden başlatma, müzik,
   grafik, ampul, drone, sunucu, roket/deploy, sohbet, lastik ördek, token, pil, büyüteç.
@@ -15,10 +15,18 @@ gezinme, el sallama, dans, zıplama.
 - Bilgisayar/donanım (13): ROS 2, GPU eğitimi, lehim, Arduino blink, USB (üçüncüde takılır), birim testleri,
   CI hattı, kod incelemesi (LGTM), işlemci ısınması, 3D yazıcı (mini Clawd basar), Docker, osiloskop, Pong. Eşyalar zotero-hoca'daki
 `clawd.js` ile aynı koordinatlarda (gövde x 3…15, y 0…8). Önizleme: `gjs -m` ile `paintScene` çağrılabilir.
-- Kullanıma göre: ≥80 terler, 100 kızarır ve yalnızca yorgun hareketler (kahve, pil, yükleniyor…) yapar.
+- Müzik, ampul ve kahve normal torbada yok; kahve yalnızca limit dolunca.
+- Kullanıma göre: ≥80 terler, 100 kızarır ve yalnızca yorgun hareketler (kahve, pil, LiPo, ısınma…) yapar.
 - 5 dk dokunulmazsa ya da token yoksa uyur (zZ, 2 fps). Ekran kilitliyken eklenti zaten kapalıdır.
 - Yerleşim: sistem simgelerinin (ağ/ses/pil) hemen solunda. Claude masaüstü uygulamasının tepsi simgesi
   (`Claude_status_icon`) gizlenir; eklenti kapatılınca geri gelir.
+
+## Tema ve barlar
+- Menü başlığındaki renk noktalarından turuncu (Claude) ya da mor tema seçilir; anında uygulanır,
+  `~/.config/claude-usage/ayarlar.json` dosyasına yazılır. Mor temada Clawd, barlar, menü zemini ve
+  vurgular mora döner; uyarı (sarı) ve kritik (kırmızı) bar renkleri her temada aynıdır.
+- Barlar Cairo ile çizilir (`bars.js`): dolgu barın biçimine kırpılır, böylece düşük yüzde nokta gibi
+  değil ince bir dilim olarak görünür. Panelde 40 px, köşe 2 px; menüde hap biçimi.
 
 ## Veri nereden geliyor
 - Token: `~/.claude/.credentials.json` (Claude Code CLI girişi). Tokenlar asla loglanmaz.

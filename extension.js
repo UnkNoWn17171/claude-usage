@@ -18,9 +18,11 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {ClawdDirector, paintScene} from './clawd.js';
+import {THEMES, paintBar, paintSeg} from './bars.js';
+import {ClawdDirector, paintScene, setTheme} from './clawd.js';
 
 const CREDS_PATH = GLib.build_filenamev([GLib.get_home_dir(), '.claude', '.credentials.json']);
+const SETTINGS_PATH = GLib.build_filenamev([GLib.get_user_config_dir(), 'claude-usage', 'ayarlar.json']);
 // Son API yanıtı (yalnızca kullanım verisi, token içermez) — sorun giderme için.
 const DUMP_PATH = GLib.build_filenamev([GLib.get_user_cache_dir(), 'claude-usage', 'son-yanit.json']);
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage';
@@ -45,7 +47,7 @@ const SYSTEM_ROLES = ['screenRecording', 'screenSharing', 'dwellClick', 'a11y', 
 // Gizlenen tepsi simgesi: Claude masaüstü uygulamasınınki (bu gösterge onun yerini tutuyor)
 const HIDE_TRAY = /Claude_status_icon/;
 
-const PANEL_BAR_W = 34;
+const PANEL_BAR_W = 40;
 const MENU_BAR_W = 292;
 
 // Bilinen limit anahtarları (sıra = menüdeki sıra). Bilinmeyen anahtarlar sona eklenir.
@@ -62,6 +64,7 @@ const DAYS = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 // seven_day_breakdown: haftalık kullanımın ürünlere göre payı
 const BREAKDOWN_NAMES = {claude_code: 'Claude Code', chat: 'Sohbet', cowork: 'Cowork', other: 'Diğer'};
 const BREAKDOWN_COLORS = ['#D97757', '#8FB8DE', '#E8C9A0', '#A8A49B', '#B7A3D9'];
+let theme = 'turuncu';  // bars.js'teki THEMES anahtarlarından biri
 
 const levelOf = pct => pct >= 80 ? 'crit' : pct >= 50 ? 'warn' : 'ok';
 const pad = n => String(n).padStart(2, '0');
@@ -160,7 +163,7 @@ function extractBreakdown(data) {
         .map((r, i) => ({
             name: BREAKDOWN_NAMES[r.key] ?? r.display_name ?? r.key,
             pct: r.percent,
-            color: BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length],
+            color: i === 0 ? THEMES[theme].first : BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length],
         }));
 }
 
@@ -216,27 +219,67 @@ class ClawdArea extends St.DrawingArea {
     }
 });
 
-class Bar {
-    constructor(width, height) {
-        this._w = width;
-        this._h = height;
-        this.actor = new St.Widget({
-            style_class: 'cu-track',
-            style: `width: ${width}px; height: ${height}px; border-radius: ${height / 2}px;`,
-            y_align: Clutter.ActorAlign.CENTER,
+// Kullanım çubuğu; çizim bars.js'te
+const BarArea = GObject.registerClass(
+class BarArea extends St.DrawingArea {
+    // radius: köşe yarıçapı (CSS px); verilmezse hap biçimi
+    _init(width, height, radius = null) {
+        super._init({style: `width: ${width}px; height: ${height}px;`, y_align: Clutter.ActorAlign.CENTER});
+        this._pct = 0;
+        this._level = 'off';
+        this.connect('repaint', () => {
+            const cr = this.get_context();
+            const [w, h] = this.get_surface_size();
+            const k = h / height;   // HiDPI ölçeği
+            paintBar(cr, w, h, this._pct, this._level, theme, radius === null ? h / 2 : radius * k);
+            cr.$dispose();
         });
-        this._fill = new St.Widget({style_class: 'cu-fill'});
-        this.actor.add_child(this._fill);
-        this.set(null, 'off');
     }
 
     set(pct, level) {
-        const p = Math.max(0, Math.min(100, pct ?? 0));
-        const fw = p > 0 ? Math.max(this._h, Math.round(p / 100 * this._w)) : 0;
-        this._fill.visible = fw > 0;
-        this._fill.style_class = `cu-fill cu-${level}`;
-        this._fill.set_style(`width: ${fw}px; height: ${this._h}px; border-radius: ${this._h / 2}px;`);
+        this._pct = Math.max(0, Math.min(100, pct ?? 0));
+        this._level = level;
+        this.queue_repaint();
     }
+});
+
+// Haftalık dağılım çubuğu
+const SegArea = GObject.registerClass(
+class SegArea extends St.DrawingArea {
+    _init(width, height, parts) {
+        super._init({style: `width: ${width}px; height: ${height}px;`});
+        this.connect('repaint', () => {
+            const cr = this.get_context();
+            const [w, h] = this.get_surface_size();
+            paintSeg(cr, w, h, parts);
+            cr.$dispose();
+        });
+    }
+});
+
+function loadTheme() {
+    try {
+        const [ok, bytes] = GLib.file_get_contents(SETTINGS_PATH);
+        const t = ok ? JSON.parse(new TextDecoder().decode(bytes)).tema : null;
+        return THEMES[t] ? t : 'turuncu';
+    } catch {
+        return 'turuncu';
+    }
+}
+
+function saveTheme(t) {
+    const file = Gio.File.new_for_path(SETTINGS_PATH);
+    try {
+        file.get_parent().make_directory_with_parents(null);
+    } catch {}
+    const bytes = new GLib.Bytes(new TextEncoder().encode(`${JSON.stringify({tema: t}, null, 2)}\n`));
+    file.replace_contents_bytes_async(bytes, null, false, Gio.FileCreateFlags.NONE, null, (f, res) => {
+        try {
+            f.replace_contents_finish(res);
+        } catch (e) {
+            console.warn(`[claude-usage] ayar yazılamadı: ${e.message}`);
+        }
+    });
 }
 
 const UsageIndicator = GObject.registerClass(
@@ -258,10 +301,10 @@ class UsageIndicator extends PanelMenu.Button {
         const box = new St.BoxLayout({style_class: 'cu-panel'});
         this._clawd = new ClawdArea('cu-clawd-small');
         const bars = new St.BoxLayout({vertical: true, style_class: 'cu-panel-bars', y_align: Clutter.ActorAlign.CENTER});
-        this._pSession = new Bar(PANEL_BAR_W, 6);
-        this._pWeek = new Bar(PANEL_BAR_W, 3);
-        bars.add_child(this._pSession.actor);
-        bars.add_child(this._pWeek.actor);
+        this._pSession = new BarArea(PANEL_BAR_W, 6, 2);
+        this._pWeek = new BarArea(PANEL_BAR_W, 4, 2);
+        bars.add_child(this._pSession);
+        bars.add_child(this._pWeek);
         const texts = new St.BoxLayout({vertical: true, style_class: 'cu-panel-texts', y_align: Clutter.ActorAlign.CENTER});
         this._label = new St.Label({text: '…', style_class: 'cu-panel-label'});
         this._timer = new St.Label({text: '', style_class: 'cu-panel-timer'});
@@ -275,6 +318,7 @@ class UsageIndicator extends PanelMenu.Button {
         this._buildMenu();
         this._watchCreds();
         this._director = new ClawdDirector();
+        this._applyTheme(loadTheme());
         this._awayCheck = 0;
         this._animate();
 
@@ -285,6 +329,24 @@ class UsageIndicator extends PanelMenu.Button {
         this._refresh();
     }
 
+    _applyTheme(t) {
+        theme = THEMES[t] ? t : 'turuncu';
+        setTheme(theme);
+        if (theme === 'mor')
+            this.menu.actor.add_style_class_name('cu-purple');
+        else
+            this.menu.actor.remove_style_class_name('cu-purple');
+        for (const [key, b] of Object.entries(this._swatches)) {
+            if (key === theme)
+                b.add_style_class_name('cu-swatch-on');
+            else
+                b.remove_style_class_name('cu-swatch-on');
+        }
+        this._pSession.queue_repaint();
+        this._pWeek.queue_repaint();
+        this._render();
+    }
+
     _buildMenu() {
         this.menu.actor.add_style_class_name('cu-menu');
 
@@ -292,10 +354,27 @@ class UsageIndicator extends PanelMenu.Button {
         const hbox = new St.BoxLayout({style_class: 'cu-header', x_expand: true});
         this._bigClawd = new ClawdArea('cu-clawd-big');
         const titles = new St.BoxLayout({vertical: true, y_align: Clutter.ActorAlign.CENTER, x_expand: true});
-        const titleRow = new St.BoxLayout({style_class: 'cu-title-row'});
+        const titleRow = new St.BoxLayout({style_class: 'cu-title-row', x_expand: true});
         titleRow.add_child(new St.Label({text: 'Claude', style_class: 'cu-title'}));
         this._chip = new St.Label({text: '', style_class: 'cu-chip', y_align: Clutter.ActorAlign.CENTER});
         titleRow.add_child(this._chip);
+        titleRow.add_child(new St.Widget({x_expand: true}));
+        // Tema seçici: renk noktaları (menü kapanmadan anında uygulanır, ayarlar.json'a yazılır)
+        this._swatches = {};
+        for (const [key, th] of Object.entries(THEMES)) {
+            const b = new St.Button({
+                style_class: `cu-swatch cu-swatch-${key}`,
+                can_focus: true,
+                accessible_name: th.label,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            b.connect('clicked', () => {
+                this._applyTheme(key);
+                saveTheme(key);
+            });
+            titleRow.add_child(b);
+            this._swatches[key] = b;
+        }
         this._status = new St.Label({text: '', style_class: 'cu-status'});
         this._status.clutter_text.line_wrap = true;
         titles.add_child(titleRow);
@@ -719,9 +798,9 @@ class UsageIndicator extends PanelMenu.Button {
         top.add_child(pct);
         row.add_child(top);
 
-        const bar = new Bar(MENU_BAR_W, 9);
+        const bar = new BarArea(MENU_BAR_W, 9);
         bar.set(l.pct, dim ? 'off' : level);
-        row.add_child(bar.actor);
+        row.add_child(bar);
 
         let reset = '';
         if (l.resetsAt) {
@@ -752,21 +831,7 @@ class UsageIndicator extends PanelMenu.Button {
         title.clutter_text.set_markup('<b>Bu hafta nereye gitti</b>');
         row.add_child(title);
 
-        const GAP = 2;
-        const seg = new St.BoxLayout({style_class: 'cu-seg', style: `spacing: ${GAP}px;`});
-        const total = parts.reduce((a, p) => a + p.pct, 0) || 1;
-        const avail = MENU_BAR_W - GAP * (parts.length - 1);
-        let used = 0;
-        parts.forEach((p, i) => {
-            const first = i === 0, last = i === parts.length - 1;
-            const w = last ? avail - used : Math.max(4, Math.round(p.pct / total * avail));
-            used += w;
-            const r = `${first ? 5 : 0}px ${last ? 5 : 0}px ${last ? 5 : 0}px ${first ? 5 : 0}px`;
-            seg.add_child(new St.Widget({
-                style: `width: ${Math.max(1, w)}px; height: 9px; background-color: ${p.color}; border-radius: ${r};`,
-            }));
-        });
-        row.add_child(seg);
+        row.add_child(new SegArea(MENU_BAR_W, 9, parts));
 
         // Renkli nokta ayrı widget: tek etikette Pango renk etiketi satır başında uygulanmıyor.
         const legend = new St.BoxLayout({style_class: 'cu-legend'});

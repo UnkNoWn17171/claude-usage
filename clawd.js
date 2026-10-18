@@ -23,8 +23,19 @@ const COL = {
     sky: '#8EC5FF', hill: '#5FAF5F', purple: '#B7A3D9', heat: '#FF7A59', mapbg: '#1E3326',
 };
 const RGB = {};
+const hexRgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
 for (const [k, hex] of Object.entries(COL))
-    RGB[k] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+    RGB[k] = hexRgb(hex);
+
+// Temaya göre değişen renkler (gövde, vurgu); geri kalan eşya renkleri sabit
+const THEME_COL = {
+    turuncu: {body: '#D97757', hot: '#E0614F', sleepy: '#B98A78', accent: '#EE9A74', glow: '#9CC8FF'},
+    mor: {body: '#9D7BEA', hot: '#D25FA8', sleepy: '#8C7FA6', accent: '#C9B2FF', glow: '#E0D2FF'},
+};
+export function setTheme(name) {
+    for (const [k, hex] of Object.entries(THEME_COL[name] ?? THEME_COL.turuncu))
+        RGB[k] = hexRgb(hex);
+}
 
 const FONT = {
     0: ['###', '#.#', '#.#', '#.#', '###'],
@@ -62,7 +73,6 @@ function hash(a, b = 0) {
     h = Math.imul(h ^ (h >>> 13), 1274126177);
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-const hop = (p, a, b, h = 1.5) => p > a && p < b ? -h * Math.sin(Math.PI * (p - a) / (b - a)) : 0;
 const typing = f => ({armL: f % 2 ? -0.6 : 0, armR: f % 2 ? 0 : -0.6});
 const clamp01 = v => Math.max(0, Math.min(1, v));
 
@@ -340,7 +350,7 @@ export const ACTS = {
         ms: 4400, side: true,
         pose: (t, f, p) => p < 0.45 ? {eyes: 'right'}
             : p < 0.62 ? {eyes: 'wide', raiseR: true}
-                : {eyes: 'happy', dy: hop(p, 0.68, 0.84, 1.4)},
+                : {eyes: 'happy'},
         back: (P, t, f, p) => {
             const bx = p < 0.45 ? 31 - p / 0.45 * 10 : 21;
             if (p < 0.85)
@@ -356,7 +366,7 @@ export const ACTS = {
     },
     compile: {
         ms: 4000, side: true,
-        pose: (t, f, p) => p < 0.8 ? {eyes: 'right'} : {eyes: 'happy', dy: hop(p, 0.82, 0.96, 1.2)},
+        pose: (t, f, p) => p < 0.8 ? {eyes: 'right'} : {eyes: 'happy'},
         back: (P, t, f, p) => {
             gear(P, 20.8, 2.4, f, p < 0.8);
             P.rect(23.6, 1.2, 9.4, 2.6, 'metal2');
@@ -422,7 +432,7 @@ export const ACTS = {
     },
     git: {
         ms: 4400, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.85 ? 'happy' : 'right', dy: hop(p, 0.86, 0.98, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.85 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             P.push(17, 8.4);
             for (const [x, y, w, h, c, i] of GIT) {
@@ -493,7 +503,7 @@ export const ACTS = {
     },
     save: {
         ms: 3000, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.6 ? 'happy' : 'right', dy: hop(p, 0.62, 0.8, 1.2)}),
+        pose: (t, f, p) => ({eyes: p > 0.6 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             const a = p < 0.5 ? (f % 2 ? 1 : 0.55) : 1;
             P.rect(20, 0.5, 7, 7, 'blue', a);
@@ -530,7 +540,7 @@ export const ACTS = {
     crash: {
         ms: 3800, side: true,
         pose: (t, f, p) => p < 0.55
-            ? {eyes: 'wide', dy: hop(p, 0.02, 0.18, 1.6), sweat: true}
+            ? {eyes: 'wide', sweat: true}
             : {eyes: 'closed', dy: 0.3, sweat: true},
         back: (P, t, f, p) => {
             if (p < 0.08)
@@ -561,7 +571,7 @@ export const ACTS = {
         ms: 4400, side: true,
         pose: (t, f) => {
             const b = (f >> 1) % 2;
-            return {eyes: 'happy', dy: b ? -0.5 : 0, legs: b ? 1 : 2, armL: b ? -0.5 : 0, armR: b ? 0 : -0.5};
+            return {eyes: 'happy', armL: b ? -0.5 : 0, armR: b ? 0 : -0.5};
         },
         front: (P, t, f) => {
             P.rs([[3.4, -1.6, 11.2, 0.8], [2.6, -1, 0.8, 2.8], [14.6, -1, 0.8, 2.8]], 'metal2');
@@ -574,7 +584,7 @@ export const ACTS = {
     },
     chart: {
         ms: 4200, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.75 ? 'happy' : 'right', dy: hop(p, 0.78, 0.92, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.75 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             P.rect(18.6, -2.4, 0.5, 12, 'metal');
             P.rect(18.6, 9.2, 14.4, 0.5, 'metal');
@@ -590,7 +600,7 @@ export const ACTS = {
     idea: {
         ms: 3000, side: true,
         pose: (t, f, p) => p < 0.35 ? {eyes: 'upright'}
-            : p < 0.5 ? {eyes: 'wide'} : {eyes: 'happy', dy: hop(p, 0.5, 0.66, 1.3)},
+            : p < 0.5 ? {eyes: 'wide'} : {eyes: 'happy'},
         back: (P, t, f, p) => {
             const on = p >= 0.35;
             P.bits(GLASS, 19.4, -3, 0.9, on ? 'yellow' : 'metal2');
@@ -634,7 +644,7 @@ export const ACTS = {
     },
     deploy: {
         ms: 4400, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.3 ? 'upright' : 'right', raiseR: p > 0.35 && p < 0.85, dy: hop(p, 0.86, 0.98, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.3 ? 'upright' : 'right', raiseR: p > 0.35 && p < 0.85}),
         back: (P, t, f, p) => {
             const rise = p < 0.3 ? 0 : Math.pow((p - 0.3) / 0.5, 2) * 18;
             const shake = p > 0.12 && p < 0.3 ? (f % 2 ? 0.2 : -0.2) : 0;
@@ -694,7 +704,7 @@ export const ACTS = {
     },
     tokens: {
         ms: 4000, side: true,
-        pose: (t, f) => ({eyes: f % 4 < 2 ? 'happy' : 'open', dy: f % 4 === 1 ? -0.5 : 0}),
+        pose: (t, f) => ({eyes: f % 4 < 2 ? 'happy' : 'open'}),
         back: (P, t, f) => {
             for (let k = 0; k < 6; k++) {
                 const x = 33 - ((f * 1.6 + k * 3.2) % 17);
@@ -708,7 +718,7 @@ export const ACTS = {
     },
     battery: {
         ms: 3600, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.75 ? 'happy' : 'right', dy: hop(p, 0.78, 0.92, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.75 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             P.push(15, 9, 1.3);
             P.rs([[4.6, -6.4, 8.6, 0.5], [4.6, -3.4, 8.6, 0.5], [4.6, -6.4, 0.5, 3.5], [12.7, -6.4, 0.5, 3.5], [13.2, -5.4, 0.7, 1.5]], 'metal');
@@ -773,7 +783,7 @@ export const ACTS = {
     },
     delivery: {
         ms: 5400, side: true,
-        pose: (t, f, p) => p < 0.7 ? {eyes: 'upright'} : {eyes: 'happy', dy: hop(p, 0.72, 0.86, 1.4)},
+        pose: (t, f, p) => p < 0.7 ? {eyes: 'upright'} : {eyes: 'happy'},
         back: (P, t, f, p) => {
             let dx, dy;
             const carrying = p < 0.58;
@@ -823,7 +833,7 @@ export const ACTS = {
     },
     lipo: {
         ms: 4600, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.82 ? 'happy' : 'right', dy: hop(p, 0.84, 0.96, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.82 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             P.rect(18.8, 3.8, 7.4, 6.2, 'metal2');
             P.rect(19.4, 4.4, 6.2, 2.6, 'screen');
@@ -946,7 +956,7 @@ export const ACTS = {
     },
     calib: {
         ms: 4400, side: true,
-        pose: (t, f, p) => ({eyes: p > 0.85 ? 'happy' : 'right', dy: hop(p, 0.86, 0.97, 1)}),
+        pose: (t, f, p) => ({eyes: p > 0.85 ? 'happy' : 'right'}),
         back: (P, t, f, p) => {
             const cx = 25.5, cy = 3.4;
             droneTop(P, cx, cy, f, (f >> 1) % 2 === 0);
@@ -974,7 +984,7 @@ export const ACTS = {
     },
     pad: {
         ms: 4800, side: true,
-        pose: (t, f, p) => p < 0.82 ? {eyes: 'upright'} : {eyes: 'happy', dy: hop(p, 0.84, 0.96, 1.2)},
+        pose: (t, f, p) => p < 0.82 ? {eyes: 'upright'} : {eyes: 'happy'},
         back: (P, t, f, p) => {
             P.rect(21, 9.3, 9.6, 0.7, 'yellow');
             for (let x = 21.6; x < 30.4; x += 1.6)
@@ -1075,8 +1085,7 @@ export const ACTS = {
         ms: 5400, side: true,
         pose: (t, f, p) => {
             const u = usbPhase(p);
-            return {eyes: u.fail ? 'wide' : u.done ? 'happy' : 'right', sweat: p > 0.4 && p < 0.7, armR: 0.6,
-                dy: u.done ? hop(p, 0.86, 0.97, 1) : 0};
+            return {eyes: u.fail ? 'wide' : u.done ? 'happy' : 'right', sweat: p > 0.4 && p < 0.7, armR: 0.6};
         },
         back: (P, t, f, p) => {
             const u = usbPhase(p);
@@ -1098,7 +1107,7 @@ export const ACTS = {
     tests: {
         ms: 5000, side: true,
         pose: (t, f, p) => p > 0.45 && p < 0.62 ? {eyes: 'wide', sweat: true}
-            : p > 0.82 ? {eyes: 'happy', dy: hop(p, 0.84, 0.96, 1)} : {eyes: 'right', ...typing(f)},
+            : p > 0.82 ? {eyes: 'happy'} : {eyes: 'right', ...typing(f)},
         back: (P, t, f, p) => {
             P.rect(18.8, -3, 14.4, 13, 'screen');
             const T = [0.14, 0.28, null, 0.7, 0.78];
@@ -1118,7 +1127,7 @@ export const ACTS = {
     },
     ci: {
         ms: 4800, side: true,
-        pose: (t, f, p) => p > 0.85 ? {eyes: 'happy', dy: hop(p, 0.86, 0.97, 1)} : {eyes: 'right'},
+        pose: (t, f, p) => p > 0.85 ? {eyes: 'happy'} : {eyes: 'right'},
         back: (P, t, f, p) => {
             P.line(20.3, 3.9, 31.1, 3.9, 'metal2', 1, 0.3);
             [19, 22.6, 26.2, 29.8].forEach((x, i) => {
@@ -1134,7 +1143,7 @@ export const ACTS = {
     },
     review: {
         ms: 4800, side: true,
-        pose: (t, f, p) => p > 0.72 ? {eyes: 'happy', dy: f % 4 < 2 ? 0 : 0.4} : {eyes: 'right'},
+        pose: (t, f, p) => p > 0.72 ? {eyes: 'happy'} : {eyes: 'right'},
         back: (P, t, f, p) => {
             P.rect(18.8, -3, 14.4, 13, 'screen');
             [['-', 7], ['+', 9], ['+', 6], [' ', 8], ['-', 5], ['+', 10], [' ', 7]].forEach(([k, w], i) => {
@@ -1179,7 +1188,7 @@ export const ACTS = {
     },
     printer: {
         ms: 6000, side: true,
-        pose: (t, f, p) => p > 0.86 ? {eyes: 'happy', dy: hop(p, 0.87, 0.97, 1.2)} : {eyes: 'right'},
+        pose: (t, f, p) => p > 0.86 ? {eyes: 'happy'} : {eyes: 'right'},
         back: (P, t, f, p) => {
             P.rs([[19, -3, 0.8, 13], [32.2, -3, 0.8, 13], [19, -3, 14, 0.8]], 'metal2');
             P.rect(20.2, 9.2, 11.6, 0.8, 'metal');
@@ -1263,24 +1272,10 @@ export const ACTS = {
     },
 };
 
-// Hareketlerin arasındaki kısa dolgu hareketleri
-const FILLERS = {
-    look: {ms: 1600, pose: (t, f) => ({eyes: f < 4 ? 'left' : f < 9 ? 'right' : 'open'})},
-    wave: {ms: 1400, pose: (t, f) => (f % 4 < 2 ? {raiseR: true, eyes: 'happy'} : {armR: -1, eyes: 'happy'})},
-    hop: {ms: 900, pose: (t, f, p) => ({dy: hop(p, 0.1, 0.8, 2), eyes: 'happy'})},
-    stretch: {ms: 1300, pose: (t, f, p) => (p > 0.15 && p < 0.8 ? {raiseR: true, raiseL: true, eyes: 'closed', dy: -0.5} : {})},
-    dance: {
-        ms: 1800,
-        pose: (t, f) => {
-            const b = (f >> 1) % 2;
-            return {raiseL: b === 0, raiseR: b === 1, legs: b + 1, dy: f % 2 ? -0.5 : 0, eyes: 'happy'};
-        },
-    },
-    jump: {ms: 1000, pose: (t, f, p) => ({dy: hop(p, 0.15, 0.85, 2.4), legs: p > 0.2 && p < 0.8 ? 1 : 0, eyes: 'happy'})},
-};
-
 // Limit dolunca yalnızca "yorgun" hareketler
 const TIRED = ['coffee', 'battery', 'loading', 'reboot', 'crash', 'search', 'lipo', 'overheat'];
+// Bilgisayar/drone dışı kalanlar normal torbaya girmez (kahve yalnızca yorgunken)
+const OFF_TOPIC = new Set(['music', 'idea', 'coffee']);
 
 const EYES = {
     open: [[5, 2, 1, 2], [12, 2, 1, 2]],
@@ -1331,7 +1326,7 @@ export function paintScene(cr, w, h, scene) {
     if (sleeping)
         pose = {eyes: 'closed', dy: gf % 2 ? 0.5 : 0};
     else if (scene.walking)
-        pose = {eyes: scene.walking > 0 ? 'right' : 'left', legs: (gf % 2) + 1, dy: gf % 2 ? -0.5 : 0};
+        pose = {eyes: scene.walking > 0 ? 'right' : 'left', legs: (gf % 2) + 1};
     else if (act?.pose)
         Object.assign(pose, act.pose(t, f, p));
     if (scene.blink && BLINKABLE.has(pose.eyes))
@@ -1366,8 +1361,7 @@ export function paintScene(cr, w, h, scene) {
 
 /*
  * Ne zaman ne yapacağına karar verir: torbadan hareket çeker (hepsi oynamadan tekrar yok),
- * yanda eşyası olan hareketler için sola yürür, aralarda kısa dolgu hareketleri yapar,
- * kullanıcı uzaktayken ya da token yokken uyur.
+ * hareketler arasında boş durmaz (dolgu/zıplama yok), kullanıcı uzaktayken ya da token yokken uyur.
  */
 export class ClawdDirector {
     constructor(now = Date.now(), rand = Math.random) {
@@ -1414,7 +1408,7 @@ export class ClawdDirector {
     }
 
     _pool() {
-        const names = this.mood === 'maxed' ? TIRED : Object.keys(ACTS);
+        const names = this.mood === 'maxed' ? TIRED : Object.keys(ACTS).filter(n => !OFF_TOPIC.has(n));
         return names.filter(n => n !== this._last || names.length < 2);
     }
 
@@ -1429,24 +1423,22 @@ export class ClawdDirector {
         return this._bag.pop();
     }
 
-    // Hareketi sıraya al: önce yerine yürü, sonra başlat
+    // Hareketi sıraya al: Clawd sahnenin solunda değilse önce oraya yürür
     _queue(name, now) {
-        const act = ACTS[name];
         this._next = name;
-        this._target = act.side ? 0 : Math.round(this._rand() * 15);
+        this._target = 0;
         this._mode = 'walk';
         this._act = null;
         this._start = now;
     }
 
-    _begin(name, now, table = ACTS) {
+    _begin(name, now) {
         this._mode = 'act';
-        this._act = table[name];
+        this._act = ACTS[name];
         this._actName = name;
         this._start = now;
         this._until = now + this._act.ms;
-        if (table === ACTS)
-            this._last = name;
+        this._last = name;
     }
 
     update(now = Date.now()) {
@@ -1463,34 +1455,18 @@ export class ClawdDirector {
             const d = this._target - this.cx;
             if (Math.abs(d) <= 0.8) {
                 this.cx = this._target;
-                if (this._next) {
-                    this._begin(this._next, now);
-                    this._next = null;
-                } else {
-                    // sadece geziniyordu: kısa mola
-                    this._mode = 'idle';
-                    this._until = now + 200 + this._rand() * 400;
-                }
+                this._begin(this._next, now);
+                this._next = null;
             } else {
                 this.cx += Math.sign(d) * 0.8;
                 return this._scene(now, Math.sign(d));
             }
         } else if (now >= this._until) {
-            if (this._mode === 'act' && this._act && !FILLERS[this._actName]) {
-                // hareket bitti: kısa mola, bazen dolgu hareketi
+            if (this._mode === 'act') {
+                // hareket bitti: çok kısa nefes, sonra hemen sıradaki iş
                 this._mode = 'idle';
                 this._act = null;
-                this._until = now + 250 + this._rand() * 450;
-            } else if (this._mode === 'idle' && this._rand() < 0.5) {
-                if (this._rand() < 0.55) {
-                    const names = Object.keys(FILLERS);
-                    this._begin(names[Math.floor(this._rand() * names.length)], now, FILLERS);
-                } else {
-                    // sahnede gezin
-                    this._next = null;
-                    this._target = Math.round(this._rand() * 15);
-                    this._mode = 'walk';
-                }
+                this._until = now + 150 + this._rand() * 200;
             } else {
                 this._queue(this._draw(), now);
                 return this._scene(now, 0);
